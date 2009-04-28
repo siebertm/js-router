@@ -54,14 +54,24 @@ JSRouter = function(routes) {
         }
 
         var hdr = 'var args;' +
+                  'var defaults = this.defaults;' +
+                  'var get = "";' +
+                  'if (arguments.length > 1 && typeof arguments[arguments.length-1] == "object") {' +
+                  '  var params = arguments[arguments.length-1];' +
+                  '  var a = [];' +
+                  '  for (var name in params) {' +
+                  '    a.push(name + "=" + escape(params[name]));' +
+                  '  }' +
+                  '  get = "?" + a.join("&");' +
+                  '  delete arguments[arguments.length-1];' +
+                  '}' +
                   'if (typeof arguments[0] == "object") {' +
                   '  args = arguments[0];' +
                   '} else {' +
                   '  args = {' + arg_params.join(',') + '}' +
-                  '}' +
-                  'var defaults = this.defaults;';
+                  '}';
 
-        fn += tpl + '";';
+        fn += tpl + '"+get;';
 
         var name = route.name + "_path";
         router[name] = new Function(hdr + fn);

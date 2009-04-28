@@ -68,20 +68,21 @@
 
   new Test.Unit.Runner({
     setup: function() {
+      Router = new JSRouter(simple_route_set);
+
+      this.assertGenerates = function(expected, code) {
+        this.assertEqual(expected, eval(code), code + " didn't generate " + expected);
+      };
     },
 
     teardown: function() {
 
     },
 
+
     testGeneration: function() {
-      Router = new JSRouter(simple_route_set);
-
       for (var i=0; i<tests.length; ++i) {
-        var expected = tests[i][0];
-        var code = tests[i][1];
-
-        this.assertEqual(expected, eval(code), code + " didn't generate " + expected);
+        this.assertGenerates(tests[i][0], tests[i][1]);
       }
 
       Router.debug();
@@ -89,18 +90,24 @@
     },
 
     testDefaults: function() {
-      var Router = new JSRouter(simple_route_set);
       Router.setDefaults({post_id: 13});
 
-      this.assertEqual("/posts/13", Router.post_path());
-      this.assertEqual("/posts/12", Router.post_path(12));
-      this.assertEqual("/posts/12", Router.post_path({post_id: 12}));
+      this.assertGenerates("/posts/13", "Router.post_path()");
+      this.assertGenerates("/posts/12", "Router.post_path(12)");
+      this.assertGenerates("/posts/12", "Router.post_path({post_id: 12})");
 
       Router.setDefaults({format: 'html'});
 
-      this.assertEqual("/posts/12.html", Router.post_path(12));
-      this.assertEqual("/posts/12.json", Router.post_path(12, 'json'));
-      this.assertEqual("/posts/12.xml", Router.post_path({post_id: 12, format: 'xml'}));
+      this.assertGenerates("/posts/12.html", "Router.post_path(12)");
+      this.assertGenerates("/posts/12.json", "Router.post_path(12, 'json')");
+      this.assertGenerates("/posts/12.xml",  "Router.post_path({post_id: 12, format: 'xml'})");
+    },
+
+    testGetParams: function() {
+      this.assertGenerates("/posts/12?dt=12",          "Router.post_path(12, {dt: 12})");
+      this.assertGenerates("/posts/12?foo=12&bar=baz", "Router.post_path(12, {foo: 12, bar: 'baz'})");
+      this.assertGenerates("/posts/12?dt=12",          "Router.post_path({post_id: 12}, {dt: 12})");
+      this.assertGenerates("/posts/12?foo=12&bar=baz", "Router.post_path({post_id: 12}, {foo: 12, bar: 'baz'})");
     }
   });
 // ]]>
