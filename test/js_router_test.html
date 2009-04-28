@@ -49,7 +49,7 @@
     "resources": [{
       "name": "post",
       "path_template": "/posts/{post_id}",
-      "params": ["post_id"],
+      "params": ["post_id", "format"],
       "options": ["GET"]
     }],
     "optional_params": ["format"],
@@ -57,15 +57,17 @@
     "options": ["GET"]
   }];
 
-  var tests = {
-    "/no_params": "Router.no_params_path()",
-    "/posts/12": "Router.post_path(12)",
-    "/posts": "Router.posts_path()"
-  };
+  var tests = [
+    ["/no_params", "Router.no_params_path()"],
+    ["/posts/12", "Router.post_path(12)"],
+    ["/posts/12.json", "Router.post_path(12, 'json')"],
+    ["/posts", "Router.posts_path()"],
+    ["/posts/12", "Router.post_path({post_id: 12})"],
+    ["/posts/12.json", "Router.post_path({post_id: 12, format: 'json'})"]
+  ];
 
   new Test.Unit.Runner({
     setup: function() {
-      Router = new JSRouter(simple_route_set);
     },
 
     teardown: function() {
@@ -73,9 +75,32 @@
     },
 
     testGeneration: function() {
-      for (expected in tests) {
-        this.assertEqual(expected, eval(tests[expected]));
+      Router = new JSRouter(simple_route_set);
+
+      for (var i=0; i<tests.length; ++i) {
+        var expected = tests[i][0];
+        var code = tests[i][1];
+
+        this.assertEqual(expected, eval(code), code + " didn't generate " + expected);
       }
+
+      Router.debug();
+
+    },
+
+    testDefaults: function() {
+      var Router = new JSRouter(simple_route_set);
+      Router.setDefaults({post_id: 13});
+
+      this.assertEqual("/posts/13", Router.post_path());
+      this.assertEqual("/posts/12", Router.post_path(12));
+      this.assertEqual("/posts/12", Router.post_path({post_id: 12}));
+
+      Router.setDefaults({format: 'html'});
+
+      this.assertEqual("/posts/12.html", Router.post_path(12));
+      this.assertEqual("/posts/12.json", Router.post_path(12, 'json'));
+      this.assertEqual("/posts/12.xml", Router.post_path({post_id: 12, format: 'xml'}));
     }
   });
 // ]]>
